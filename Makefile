@@ -116,7 +116,7 @@ tmp/lv1.lst: $(shell find data/lv1 -type f)
 	find data/lv1 -type f > tmp/lv1.lst
 
 bin/lv1.pak: tmp/lv1.lst
-	$(PYTHON) tools/pack.py data/lv1 bin/lv1.pak
+	$(PYTHON) tools/pack.py -c data/lv1 bin/lv1.pak
 
 clean_pak:
 	rm bin/*.pak

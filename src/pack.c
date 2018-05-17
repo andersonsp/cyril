@@ -21,7 +21,7 @@ CyPak* cy_pak_load(char* filename) {
   FILE *fp = fopen(filename, "rb");
   if (!fp) return NULL;
   if (!fread(&header, sizeof(PakHeader), 1, fp)) goto pak_error;
-  if (memcmp(&header.magic, "LPAK", 4) != 0) goto pak_error;
+  if (memcmp(&header.magic, "CYPK", 4) != 0) goto pak_error;
   if (header.version != 1) goto pak_error;
 
   int data_sz = header.offset + header.size;
