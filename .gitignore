@@ -15,3 +15,15 @@
 *.exe
 *.out
 *.app
+
+# osx
+.DS_Store
+
+etc/bin/*
+!etc/bin/.gitkeep
+ref/*
+!ref/.gitkeep
+tmp/*
+!tmp/.gitkeep
+bin/*
+!bin/.gitkeep
