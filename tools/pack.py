@@ -77,7 +77,7 @@ def list_pak(pak_filename):
             entry = PAK_ENTRY.unpack(f.read(PAK_ENTRY.size))
             print("[%6d] %-56s %7db" % (entry[1], entry[0].rstrip('\0'), entry[2]))
         print("%-8s %-56s %-8s" % ('_'*8, '_'*56, '_'*8))
-        print("%4d Files -- %8d Bytes\n" % (count, PAK_HEADER.size + header[2] + header[3]))
+        print("%8d Files -- %16d Bytes\n" % (count, PAK_HEADER.size + header[2] + header[3]))
 
 
 #
