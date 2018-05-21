@@ -3,6 +3,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
+#define cy_new(struct_type, n_structs)   \
+( (struct_type *) malloc((sizeof(struct_type)) * (n_structs)) )
+
+#define cy_new0(struct_type, n_structs) \
+( (struct_type *) calloc((n_structs), (sizeof(struct_type))) )
+
+#define cy_renew(struct_type, mem, n_structs)  \
+( (struct_type *) realloc((mem), (sizeof(struct_type)) * (n_structs)) )
+
+#define cy_free( pointer ) free( pointer )
+
+
+
+
 // PAK file handling
 
 typedef struct _CyPak CyPak;

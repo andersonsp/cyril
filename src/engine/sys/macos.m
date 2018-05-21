@@ -51,10 +51,6 @@ static CVReturn display_link_callback(CVDisplayLinkRef dl, const CVTimeStamp* no
         NSOpenGLPFANoRecovery,
         NSOpenGLPFAOpenGLProfile,
         NSOpenGLProfileVersion3_2Core,
-        // #if PEZ_ENABLE_MULTISAMPLING
-        //         kCGLPFASampleBuffers, 1,
-        //         kCGLPFASamples, 4,
-        // #endif
         0
     };
 
@@ -151,7 +147,7 @@ static CVReturn display_link_callback(CVDisplayLinkRef dl, const CVTimeStamp* no
 }
 
 - (void) keyDown:(NSEvent *)theEvent {
-    if([theEvent isARepeat]) return;
+    if([theEvent isARepeat]) return; // ignore key repeat
 
     CyEvent ev; //  = (CyEvent){ CY_KEY_DOWN, {.key={.code=}} };
     switch([theEvent keyCode]) {

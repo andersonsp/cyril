@@ -9,7 +9,8 @@ PYTHON  = python
 CFLAGS	= -Wall -O2 -Iinclude
 LDFLAGS = -lm
 
-OBJS	= test/main.o src/glext.o src/pack.o
+ENGINE  = src/glext.o src/engine/assets/pack.o
+OBJS	= $(ENGINE) src/game/main.o
 
 
 #
@@ -64,32 +65,40 @@ clean_bundle:
 # House keeping
 #
 count:
-	wc -l Makefile src/*.c src/*.m include/*.h tools/*.py
+	@find src include tools -name "*.c" -o -name "*.m" -o -name "*.h" ! -name "glcorearb.h" -o -name "*.py" | xargs wc -l
 
-sort_exts:
-	mv glextensions.lst tmp/glextensions.lst && sort tmp/glextensions.lst > glextensions.lst
+exts_sort:
+	mv glextensions.lst tmp/glextensions.lst && uniq tmp/glextensions.lst | sort > glextensions.lst
 
-clean: clean_exe clean_pak clean_tmp
-	rm src/glext.c
-	rm include/glext.h
+tmp/used_glexts.lst: glextensions.lst
+	@< glextensions.lst xargs -J% -n1 fgrep -m1 -Iwhro --exclude="glext.*" % src > tmp/used_glexts.lst ||:
+
+exts_unused: tmp/used_glexts.lst
+	@diff -y glextensions.lst tmp/used_glexts.lst ||:
+
+exts_optimized: tmp/used_glexts.lst
+	mv glextensions.lst tmp/glextensions.lst && cp tmp/used_glexts.lst glextensions.lst
+
+clean: clean_exe clean_pak clean_test clean_tmp
+	find ./src ./include -name "glext.*" | xargs rm
 
 clean_tmp:
-	ls tmp | grep -v .gitkeep | sed 's/^/tmp\//' | xargs rm -rf
+	ls tmp/ | grep -v .gitkeep | sed 's/^/tmp\//' | xargs rm -rf
 
 #
 # Engine compilation
 #
 bin/$(APP_NAME): include/cyril.h include/glext.h $(OBJS)
-	make build_$(OSFLAG)
+	@make build_$(OSFLAG)
 
-build_linux: include/cyril.h include/glext.h $(OBJS) src/sys_linux.o
-	$(CC) $(CFLAGS) $(OBJS) src/sys_linux.o -o bin/$(APP_NAME) $(LDFLAGS) -lGL -lX11
+build_linux: include/cyril.h include/glext.h $(OBJS) src/engine/sys/linux.o
+	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/linux.o -o bin/$(APP_NAME) $(LDFLAGS) -lGL -lX11
 
-build_windows: include/cyril.h include/glext.h $(OBJS) src/sys_windows.o
-	$(CC) $(CFLAGS) $(OBJS) sys_windows.o -o bin/$(APP_NAME).exe $(LDFLAGS) -lopengl32 -lwin32
+build_windows: include/cyril.h include/glext.h $(OBJS) src/engine/sys/windows.o
+	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/windows.o -o bin/$(APP_NAME).exe $(LDFLAGS) -lopengl32 -lwin32
 
-build_macos: include/cyril.h include/glext.h $(OBJS) src/sys_macos.o
-	$(CC) $(CFLAGS) $(OBJS) src/sys_macos.o -o bin/$(APP_NAME) $(LDFLAGS) \
+build_macos: include/cyril.h include/glext.h $(OBJS) src/engine/sys/macos.o
+	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/macos.o -o bin/$(APP_NAME) $(LDFLAGS) \
 	-framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework GameController
 
 build_unsupported:
@@ -104,22 +113,23 @@ include/glext.h: glextensions.lst
 	$(PYTHON) tools/glext.py -e glextensions.lst -c src/glext.c -i include/glext.h -a include/gl/glcorearb.h -d1
 
 clean_exe:
-	rm src/*.o
-	rm test/*.o
+	find ./src -name "*.o" | xargs rm
 	rm bin/$(APP_NAME)
 
+clean_test:
+	ls test/ | grep -v .gitkeep | sed 's/^/test\//' | xargs rm -rf
 
 #
 # PACK build
 #
 tmp/lv1.lst: $(shell find data/lv1 -type f)
-	find data/lv1 -type f > tmp/lv1.lst
+	find ./data/lv1 -type f > tmp/lv1.lst
 
 bin/lv1.pak: tmp/lv1.lst
 	$(PYTHON) tools/pack.py -c data/lv1 bin/lv1.pak
 
 clean_pak:
-	rm bin/*.pak
+	find ./bin -name "*.pak" | xargs rm
 
 
 ############
