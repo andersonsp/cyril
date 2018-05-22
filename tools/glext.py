@@ -65,8 +65,10 @@ def gen_ext_files(procs, exts, c_file, h_file, debug):
         f.write('#define %s_H_INCLUDED\n' % header_name)
         f.write('#include <gl/glcorearb.h>\n')
         f.write('\n')
-        f.write('int glext_init(void* mod);\n')
-        f.write('void* glext_proc_addr(void* mod, char* name);\n')
+        f.write('#define GLEXT_OK 0\n')
+        f.write('#define GLEXT_LIB_ERR -1\n')
+        f.write('\n')
+        f.write('int glext_init();\n')
         f.write('\n')
         for ext in exts:
             f.write('extern PFN%sPROC %s;\n' % (ext.upper(), ext))
@@ -76,13 +78,33 @@ def gen_ext_files(procs, exts, c_file, h_file, debug):
         f.write('#include <%s>\n' % os.path.basename(h_file))
         f.write('\n')
 
+        f.write('#ifdef _WIN32\n')
+        f.write('#define WIN32_LEAN_AND_MEAN 1\n')
+        f.write('#include <windows.h>\n')
+        f.write('#define dlsym GetProcAddress\n')
+        f.write('#else\n')
+        f.write('#include <dlfcn.h>\n')
+        f.write('#endif\n')
+        f.write('\n')
+
         for ext in exts:
             f.write('PFN%sPROC %s;\n' % (ext.upper(), ext))
-
         f.write('\n')
-        f.write('int glext_init(void* mod) {\n')
+
+        f.write('int glext_init() {\n')
+        f.write('#ifdef _WIN32\n')
+        f.write('  HMODULE libgl = LoadLibraryA("opengl32.dll");\n')
+        f.write('#elif defined(__APPLE__) || defined(__APPLE_CC__)\n')
+        f.write('  void* libgl = dlopen("/System/Library/Frameworks/OpenGL.framework/OpenGL", RTLD_LAZY | RTLD_GLOBAL);\n')
+        f.write('#else\n')
+        f.write('  void* libgl = dlopen("libGL.so.1", RTLD_LAZY | RTLD_GLOBAL);\n')
+        f.write('#endif\n')
+        f.write('\n')
+        f.write('  if(!libgl) return GLEXT_LIB_ERR;\n')
+        f.write('\n')
+
         for i, ext in enumerate(exts, 1):
-            f.write('  %s = (PFN%sPROC) glext_proc_addr(mod, "%s");\n' % (ext, ext.upper(), ext))
+            f.write('  %s = (PFN%sPROC) dlsym(libgl, "%s");\n' % (ext, ext.upper(), ext))
             if debug == 2:
                 f.write('  if(!%s) {\n' % ext)
                 f.write('    printf("Could not load extension %%s\\n", "%s");\n' % ext)
@@ -90,6 +112,12 @@ def gen_ext_files(procs, exts, c_file, h_file, debug):
                 f.write('  }\n' % ext)
             elif debug == 1:
                 f.write('  if(!%s) return %d;\n' % (ext, i))
+
+        f.write('#ifdef _WIN32\n')
+        f.write('  FreeLibrary(libgl);\n')
+        f.write('#else\n')
+        f.write('  dlclose(libgl);\n')
+        f.write('#endif\n')
         f.write('  return 0;\n')
         f.write('}\n')
 

@@ -9,7 +9,7 @@ PYTHON  = python
 CFLAGS	= -Wall -O2 -Iinclude
 LDFLAGS = -lm
 
-ENGINE  = src/glext.o src/engine/assets/pack.o
+ENGINE  = src/engine/render/glext.o src/engine/assets/pack.o
 OBJS	= $(ENGINE) src/game/main.o
 
 
@@ -65,7 +65,7 @@ clean_bundle:
 # House keeping
 #
 count:
-	@find src include tools -name "*.c" -o -name "*.m" -o -name "*.h" ! -name "glcorearb.h" -o -name "*.py" | xargs wc -l
+	@find src include tools -name "*.c" -o -name "*.m" -o -name "*.h" ! -name "glcorearb.h" -o -name "*.py" | xargs wc -l Makefile
 
 exts_sort:
 	mv glextensions.lst tmp/glextensions.lst && uniq tmp/glextensions.lst | sort > glextensions.lst
@@ -92,13 +92,13 @@ bin/$(APP_NAME): include/cyril.h include/glext.h $(OBJS)
 	@make build_$(OSFLAG)
 
 build_linux: include/cyril.h include/glext.h $(OBJS) src/engine/sys/linux.o
-	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/linux.o -o bin/$(APP_NAME) $(LDFLAGS) -lGL -lX11
+	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/linux.o -o bin/$(APP_NAME) $(LDFLAGS) -lGL -lX11 -ldl
 
 build_windows: include/cyril.h include/glext.h $(OBJS) src/engine/sys/windows.o
 	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/windows.o -o bin/$(APP_NAME).exe $(LDFLAGS) -lopengl32 -lwin32
 
 build_macos: include/cyril.h include/glext.h $(OBJS) src/engine/sys/macos.o
-	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/macos.o -o bin/$(APP_NAME) $(LDFLAGS) \
+	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/macos.o -o bin/$(APP_NAME) $(LDFLAGS) -ldl \
 	-framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework GameController
 
 build_unsupported:
@@ -110,7 +110,7 @@ build_unsupported:
 	@echo "See readme.md for more info."
 
 include/glext.h: glextensions.lst
-	$(PYTHON) tools/glext.py -e glextensions.lst -c src/glext.c -i include/glext.h -a include/gl/glcorearb.h -d1
+	$(PYTHON) tools/glext.py -e glextensions.lst -c src/engine/render/glext.c -i include/glext.h -a include/gl/glcorearb.h -d1
 
 clean_exe:
 	find ./src -name "*.o" | xargs rm

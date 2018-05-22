@@ -2,27 +2,40 @@
 #define GLEXT_H_H_INCLUDED
 #include <gl/glcorearb.h>
 
-int glext_init(void* mod);
-void* glext_proc_addr(void* mod, char* name);
+#define GLEXT_OK 0
+#define GLEXT_LIB_ERR -1
 
+int glext_init();
+
+extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLATTACHSHADERPROC glAttachShader;
 extern PFNGLBINDATTRIBLOCATIONPROC glBindAttribLocation;
 extern PFNGLBINDBUFFERPROC glBindBuffer;
+extern PFNGLBINDTEXTUREPROC glBindTexture;
+extern PFNGLBLENDFUNCPROC glBlendFunc;
 extern PFNGLBUFFERDATAPROC glBufferData;
 extern PFNGLCLEARPROC glClear;
 extern PFNGLCLEARCOLORPROC glClearColor;
+extern PFNGLCLEARDEPTHPROC glClearDepth;
 extern PFNGLCOMPILESHADERPROC glCompileShader;
 extern PFNGLCREATEPROGRAMPROC glCreateProgram;
 extern PFNGLCREATESHADERPROC glCreateShader;
 extern PFNGLCULLFACEPROC glCullFace;
-extern PFNGLDRAWARRAYSPROC glDrawArrays;
+extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+extern PFNGLDRAWELEMENTSPROC glDrawElements;
+extern PFNGLENABLEPROC glEnable;
 extern PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 extern PFNGLGENBUFFERSPROC glGenBuffers;
+extern PFNGLGENTEXTURESPROC glGenTextures;
 extern PFNGLGETPROGRAMIVPROC glGetProgramiv;
 extern PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
 extern PFNGLGETSHADERIVPROC glGetShaderiv;
 extern PFNGLLINKPROGRAMPROC glLinkProgram;
 extern PFNGLSHADERSOURCEPROC glShaderSource;
+extern PFNGLTEXIMAGE2DPROC glTexImage2D;
+extern PFNGLTEXPARAMETERIPROC glTexParameteri;
+extern PFNGLUNIFORM1IPROC glUniform1i;
+extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLVIEWPORTPROC glViewport;

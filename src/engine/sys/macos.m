@@ -8,7 +8,6 @@
 
 #import <cyril.h>
 #import <glext.h>
-#import <dlfcn.h> // for glext
 
 
 @class View;
@@ -64,18 +63,11 @@ static CVReturn display_link_callback(CVDisplayLinkRef dl, const CVTimeStamp* no
     on_display = display_cb;
 
     // Initialize glext
-    void* libgl = dlopen("/System/Library/Frameworks/OpenGL.framework/OpenGL", RTLD_LAZY | RTLD_GLOBAL);
-    if(!libgl) {
-        fprintf(stderr, "glext: dlopen(): %s\n", dlerror());
-        exit(EXIT_FAILURE);
-    }
-
-    int res = glext_init(libgl);
+    int res = glext_init();
     if(res != 0) {
         fprintf(stderr, "glext: failed to initialize: %d\n", res);
         exit(EXIT_FAILURE);
     }
-    dlclose(libgl);
 
     // Synchronize buffer swaps with vertical refresh rate
     GLint swapInt = 1;
@@ -230,11 +222,4 @@ int cy_main() {
 void cy_terminate() {
     NSApplication *app = [NSApplication sharedApplication];
     [app terminate: app];
-}
-
-//
-// Glext
-//
-void* glext_proc_addr(void* libgl, char* name) {
-    return dlsym(libgl, name);
 }
