@@ -9,27 +9,25 @@ PYTHON  = python
 CFLAGS	= -Wall -O2 -Iinclude
 LDFLAGS = -lm
 
-ENGINE  = src/engine/render/glext.o src/engine/assets/pack.o
-OBJS	= $(ENGINE) src/game/main.o
+ENGINE  := $(addprefix src/engine/,render/glext.o assets/pack.o)
+OBJS	:= $(ENGINE) src/game/main.o
 
 
 #
 # Detect platform
 #
 ifeq ($(OS),Windows_NT)
-    OSFLAG = windows
+	OSFLAG = windows
 else
-    uname_s := $(shell uname -s)
-    ifeq ($(uname_s),Linux)
-        OSFLAG = linux
-    else
-	    ifeq ($(uname_s),Darwin)
-	    	CC 	   = clang
-	        OSFLAG = macos
-        else
-			OSFLAG = unsupported
-	    endif
-    endif
+	uname_s := $(shell uname -s)
+	ifeq ($(uname_s),Linux)
+		OSFLAG = linux
+	else ifeq ($(uname_s),Darwin)
+		CC 	   = clang
+		OSFLAG = macos
+	else
+		OSFLAG = unsupported
+	endif
 endif
 
 #
@@ -122,6 +120,8 @@ clean_test:
 #
 # PACK build
 #
+
+
 tmp/lv1.lst: $(shell find data/lv1 -type f)
 	find ./data/lv1 -type f > tmp/lv1.lst
 
