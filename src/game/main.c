@@ -39,6 +39,13 @@ int main(int argc, const char *argv[]) {
     cy_init();
     CyGeom geom = cy_window("test window", 0, 0, WIDTH, HEIGHT, on_display, on_event);
 
+    // Initialize glext
+    int res = glext_init();
+    if(res != 0) {
+        fprintf(stderr, "glext: failed to initialize: %d\n", res);
+        exit(EXIT_FAILURE);
+    }
+
     // extra initialization needed
     // load resources etc
 

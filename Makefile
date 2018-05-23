@@ -86,7 +86,7 @@ clean_tmp:
 #
 # Engine compilation
 #
-bin/$(APP_NAME): include/cyril.h include/glext.h $(OBJS)
+bin/$(APP_NAME): include/cyril.h include/glext.h $(OBJS) src/engine/sys/$(OSFLAG).o
 	@make build_$(OSFLAG)
 
 build_linux: include/cyril.h include/glext.h $(OBJS) src/engine/sys/linux.o

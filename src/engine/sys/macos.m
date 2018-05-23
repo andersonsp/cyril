@@ -1,18 +1,13 @@
 #import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h> // for key codes
 
-#import <OpenGL/OpenGL.h>
 #import <GameController/GameController.h>
 
 #import <mach/mach_time.h>
-
 #import <cyril.h>
-#import <glext.h>
-
 
 @class View;
     @interface View : NSOpenGLView <NSWindowDelegate> {
-        CVDisplayLinkRef displayLink; //display link for managing rendering thread
         uint64_t init_time;
 
         CyOnDisplay on_display;
@@ -62,28 +57,9 @@ static CVReturn display_link_callback(CVDisplayLinkRef dl, const CVTimeStamp* no
     on_event = event_cb;
     on_display = display_cb;
 
-    // Initialize glext
-    int res = glext_init();
-    if(res != 0) {
-        fprintf(stderr, "glext: failed to initialize: %d\n", res);
-        exit(EXIT_FAILURE);
-    }
-
     // Synchronize buffer swaps with vertical refresh rate
     GLint swapInt = 1;
     [[self openGLContext] setValues:&swapInt forParameter:NSOpenGLCPSwapInterval];
-
-    // Create a display link capable of being used with all active displays
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &display_link_callback, (__bridge void*)self);
-
-    // Set the display link for the current renderer
-    CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
-    CGLPixelFormatObj cglPixelFormat = [[self pixelFormat] CGLPixelFormatObj];
-    CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
-
-    // Activate the display link
-    CVDisplayLinkStart(displayLink);
 
     return self;
 }
@@ -166,18 +142,14 @@ static CVReturn display_link_callback(CVDisplayLinkRef dl, const CVTimeStamp* no
     }
 }
 
-- (void)dealloc {
-    // Release the display link
-    CVDisplayLinkRelease(displayLink);
-    [super dealloc];
-}
-
 @end
 
 
 //
 // Cy
 //
+CVDisplayLinkRef displayLink; //display link for managing rendering thread
+
 int cy_init() {
     // TODO: install key translation table
     return 0;
@@ -210,16 +182,27 @@ CyGeom cy_window(char* title, int x, int y, int w, int h, CyOnDisplay display_cb
 #endif
     [view release];
 
+    // Create a display link capable of being used with all active displays
+    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+    CVDisplayLinkSetOutputCallback(displayLink, &display_link_callback, (__bridge void*)view);
+
+    // Set the display link for the current renderer
+    CGLContextObj cglContext = [[view openGLContext] CGLContextObj];
+    CGLPixelFormatObj cglPixelFormat = [[view pixelFormat] CGLPixelFormatObj];
+    CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
+
     NSRect rect = [view convertRectToBacking:[view bounds]];
     return (CyGeom){rect.size.width, rect.size.height};
 }
 
 int cy_main() {
+    CVDisplayLinkStart(displayLink); // Activate the display link
     [[NSApplication sharedApplication] run];
     return 0;  // not reached
 }
 
 void cy_terminate() {
+    CVDisplayLinkRelease(displayLink);
     NSApplication *app = [NSApplication sharedApplication];
     [app terminate: app];
 }
