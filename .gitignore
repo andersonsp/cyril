@@ -27,3 +27,6 @@ tmp/*
 !tmp/.gitkeep
 bin/*
 !bin/.gitkeep
+
+test/bin/*
+!test/bin/.gitkeep

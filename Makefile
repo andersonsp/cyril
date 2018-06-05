@@ -9,8 +9,15 @@ PYTHON  = python
 CFLAGS	= -Wall -O2 -Iinclude
 LDFLAGS = -lm
 
-ENGINE  := $(addprefix src/engine/,render/glext.o assets/pack.o)
-OBJS	:= $(ENGINE) src/game/main.o
+ENGINE_UTIL 	:= $(addprefix util/, pipe.o mem.o)
+ENGINE_RENDER	:= $(addprefix render/, glext.o)
+ENGINE_ASSETS 	:= $(addprefix assets/, pack.o)
+ENGINE_MATH     := $(addprefix math/, vec.o matrix.o quat.o)
+ENGINE  		:= $(addprefix src/engine/,$(ENGINE_RENDER) $(ENGINE_ASSETS) $(ENGINE_MATH) $(ENGINE_UTIL))
+
+GAME    := $(addprefix src/game/, main.o)
+
+OBJS	:= $(ENGINE) $(GAME)
 
 
 #
@@ -30,12 +37,16 @@ else
 	endif
 endif
 
-#
-# Main
-#
-all:  bin/$(APP_NAME) bin/lv1.pak
+.DEFAULT_GOAL := help
+.PHONY: help
+help:
+	@grep -E '(^[a-zA-Z_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m==/'
 
-run: bin/$(APP_NAME) bin/lv1.pak
+## Main
+#
+all:  bin/$(APP_NAME) bin/lv1.pak ## Compile all (autodetect platform)
+
+run: bin/$(APP_NAME) bin/lv1.pak ## Compile and run the project
 	make run_$(OSFLAG)
 
 run_linux:
@@ -60,27 +71,27 @@ clean_bundle:
 	rm -rf tmp/$(APP_NAME).app
 
 #
-# House keeping
+## House keeping
 #
-count:
+count: ## Count LOCs in the project
 	@find src include tools -name "*.c" -o -name "*.m" -o -name "*.h" ! -name "glcorearb.h" -o -name "*.py" | xargs wc -l Makefile
 
-exts_sort:
+exts_sort: ## Sort gl extensions list (keeps a backup in /tmp)
 	mv glextensions.lst tmp/glextensions.lst && uniq tmp/glextensions.lst | sort > glextensions.lst
 
 tmp/used_glexts.lst: glextensions.lst
 	@< glextensions.lst xargs -J% -n1 fgrep -m1 -Iwhro --exclude="glext.*" % src > tmp/used_glexts.lst ||:
 
-exts_unused: tmp/used_glexts.lst
+exts_unused: tmp/used_glexts.lst ## Show unused extensions
 	@diff -y glextensions.lst tmp/used_glexts.lst ||:
 
-exts_optimized: tmp/used_glexts.lst
+exts_optimized: tmp/used_glexts.lst ## Remove unused extensions (keeps a backup in /tmp)
 	mv glextensions.lst tmp/glextensions.lst && cp tmp/used_glexts.lst glextensions.lst
 
-clean: clean_exe clean_pak clean_test clean_tmp
+clean: clean_exe clean_pak clean_test clean_tmp ## Clean everything
 	find ./src ./include -name "glext.*" | xargs rm
 
-clean_tmp:
+clean_tmp: ## -
 	ls tmp/ | grep -v .gitkeep | sed 's/^/tmp\//' | xargs rm -rf
 
 #
@@ -90,7 +101,7 @@ bin/$(APP_NAME): include/cyril.h include/glext.h $(OBJS) src/engine/sys/$(OSFLAG
 	@make build_$(OSFLAG)
 
 build_linux: include/cyril.h include/glext.h $(OBJS) src/engine/sys/linux.o
-	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/linux.o -o bin/$(APP_NAME) $(LDFLAGS) -lGL -lX11 -ldl
+	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/linux.o -o bin/$(APP_NAME) $(LDFLAGS) -lGL -lX11 -ldl -lpthread
 
 build_windows: include/cyril.h include/glext.h $(OBJS) src/engine/sys/windows.o
 	$(CC) $(CFLAGS) $(OBJS) src/engine/sys/windows.o -o bin/$(APP_NAME).exe $(LDFLAGS) -lopengl32 -lwin32
@@ -114,13 +125,29 @@ clean_exe:
 	find ./src -name "*.o" | xargs rm
 	rm bin/$(APP_NAME)
 
-clean_test:
-	ls test/ | grep -v .gitkeep | sed 's/^/test\//' | xargs rm -rf
 
-#
-# PACK build
+## Tests
 #
 
+test/bin/%: test/src/%.o src/%.o
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	$(CC) $^ -o $@
+
+.PHONY: test
+test: $(shell find test/src -name "*.c" -type f | sed 's/^test\/src/test\/bin/;s/.c$$//') ## Compile and execute all tests in /test dir
+	@printf "\e[1mRunning tests...\e[0m\n"
+	sh -c $?
+
+clean_test: ## Clean test artifacts
+	# ls test/ | grep -v .gitkeep | sed 's/^/test\//' | xargs rm -rf
+
+
+#
+## Pack build
+#
+
+packs: ## Build all packs in /data dir
+	@echo TODO
 
 tmp/lv1.lst: $(shell find data/lv1 -type f)
 	find ./data/lv1 -type f > tmp/lv1.lst
@@ -128,11 +155,11 @@ tmp/lv1.lst: $(shell find data/lv1 -type f)
 bin/lv1.pak: tmp/lv1.lst
 	$(PYTHON) tools/pack.py -c data/lv1 bin/lv1.pak
 
-clean_pak:
+clean_pak: ## -
 	find ./bin -name "*.pak" | xargs rm
 
 
-############
+# =============================
 #
 # for these, use the same trick as with lv1.pak
 
